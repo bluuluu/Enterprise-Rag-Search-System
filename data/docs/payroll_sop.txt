@@ -1,0 +1,4 @@
+Payroll Standard Operating Procedure
+Payroll changes require manager approval and HR verification.
+Approvals are processed in the finance system before Thursday 5 PM UTC.
+Dual control is required for bank account changes and salary adjustments.

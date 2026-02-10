@@ -1,0 +1,4 @@
+Security Controls Baseline
+Single sign-on through the enterprise identity provider is required for all SaaS tools.
+MFA is mandatory for privileged access and all remote sessions.
+Production database access requires ticketed approval and time-bounded credentials.

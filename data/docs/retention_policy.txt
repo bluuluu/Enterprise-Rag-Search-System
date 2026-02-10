@@ -1,0 +1,5 @@
+Retention Policy
+All customer support tickets must be retained for at least 24 months.
+Legal hold notices override normal expiration and require preservation until release.
+Personally identifiable information in archived records must be encrypted at rest.
+Quarterly audits verify deletion workflows and retention exceptions.
