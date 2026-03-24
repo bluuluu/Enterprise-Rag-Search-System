@@ -4,12 +4,13 @@ from pathlib import Path
 
 import numpy as np
 from fastapi import HTTPException
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
 from .config import settings
 from .embedder import Embedder
 from .models import AuditLog, Chunk, Document, DocumentPermission, User
+from .vector_engine import topk_cosine
 
 
 embedder = Embedder(n_features=settings.embedding_dim)
@@ -56,15 +57,11 @@ def list_accessible_documents(db: Session, user: User):
     if user.role == "admin":
         return db.query(Document).all()
 
-    shared_ids = (
-        db.query(DocumentPermission.document_id)
-        .filter(
-            and_(
-                DocumentPermission.user_id == user.id,
-                DocumentPermission.can_read.is_(True),
-            )
+    shared_ids = select(DocumentPermission.document_id).where(
+        and_(
+            DocumentPermission.user_id == user.id,
+            DocumentPermission.can_read.is_(True),
         )
-        .subquery()
     )
 
     return (
@@ -186,14 +183,19 @@ def retrieve(db: Session, user: User, query: str, top_k: int = 5):
         return []
 
     qv = embedder.embed_query(query)
-    scores = []
-    for chunk in chunks:
-        vec = np.array(json.loads(chunk.embedding_json), dtype=np.float32)
-        score = float(np.dot(qv, vec))
-        scores.append((score, chunk))
+    matrix = np.asarray([json.loads(chunk.embedding_json) for chunk in chunks], dtype=np.float32)
+    top_indices, top_scores = topk_cosine(
+        qv,
+        matrix,
+        top_k=top_k,
+        num_threads=settings.vector_search_num_threads,
+        assume_normalized=settings.vector_search_assume_normalized,
+    )
 
-    scores.sort(key=lambda x: x[0], reverse=True)
-    top = scores[:top_k]
+    top = [
+        (float(top_scores[i]), chunks[int(top_indices[i])])
+        for i in range(len(top_indices))
+    ]
 
     latency_ms = (time.perf_counter() - t0) * 1000.0
     create_audit_log(

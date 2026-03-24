@@ -7,6 +7,8 @@ class Settings(BaseModel):
     chunk_size_words: int = 120
     chunk_overlap_words: int = 25
     retrieval_top_k: int = 5
+    vector_search_num_threads: int = 0
+    vector_search_assume_normalized: bool = True
 
 
 settings = Settings()

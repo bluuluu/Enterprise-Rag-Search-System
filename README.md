@@ -12,6 +12,7 @@ A production-style starter for Retrieval-Augmented Generation (RAG) over interna
 ## Features
 - Document ingestion and chunking
 - Embeddings + cosine similarity retrieval
+- Optional C++ SIMD + multi-threaded vector ranking extension (cosine + euclidean)
 - Cited answers with chunk-level traceability
 - Role-based access (`admin`, `analyst`, `viewer`)
 - Fine-grained document sharing via explicit permissions
@@ -23,20 +24,25 @@ A production-style starter for Retrieval-Augmented Generation (RAG) over interna
 
 1. Install dependencies:
 ```bash
-pip install -r requirements.txt
+python3 -m pip install -r requirements.txt
 ```
 
-2. Run API:
+2. Build the native vector engine (optional but recommended):
+```bash
+make build-cpp
+```
+
+3. Run API:
 ```bash
 uvicorn app.main:app --reload
 ```
 
-3. Index sample docs:
+4. Index sample docs:
 ```bash
 ./scripts/index_sample_docs.sh
 ```
 
-4. Search:
+5. Search:
 ```bash
 curl -s -X POST http://localhost:8000/search \
   -H 'Content-Type: application/json' \
@@ -62,7 +68,23 @@ Pass user identity in `X-User` header.
 
 ## Retrieval Evaluation
 ```bash
-python scripts/evaluate_retrieval.py --username victor_viewer --top-k 5
+python3 scripts/evaluate_retrieval.py --username victor_viewer --top-k 5
+```
+
+## SIMD Vector Search Benchmark
+Run latency benchmarks for the C++ engine:
+```bash
+python3 scripts/benchmark_vector_engine.py --num-vectors 200000 --dim 384 --top-k 10 --num-queries 20 --compare-numpy
+```
+
+Stress-test with 1M embeddings (requires ~1.5GB+ RAM):
+```bash
+python3 scripts/benchmark_vector_engine.py --num-vectors 1000000 --dim 384 --top-k 10 --num-queries 20 --compare-numpy
+```
+
+Or via Make:
+```bash
+make bench-cpp
 ```
 
 ## Smoke Test
