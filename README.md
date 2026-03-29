@@ -34,21 +34,50 @@ make build-cpp
 
 3. Run API:
 ```bash
-uvicorn app.main:app --reload
+python3 -m uvicorn app.main:app --reload
 ```
 
-4. Index sample docs:
+4. Open demo web app:
+```text
+http://127.0.0.1:8000/demo
+```
+
+5. Index sample docs:
 ```bash
 ./scripts/index_sample_docs.sh
 ```
 
-5. Search:
+6. Search:
 ```bash
 curl -s -X POST http://localhost:8000/search \
   -H 'Content-Type: application/json' \
   -H 'X-User: victor_viewer' \
   -d '{"query":"What are required SSO controls?","top_k":3}'
 ```
+
+## Demo Web App
+Open `http://127.0.0.1:8000/demo` to use the demo console.
+
+What it does:
+- Lets you switch between demo users (`admin`, `analyst`, `viewer`) to show role-based access behavior.
+- Lets you index local text files into the RAG system (`private` or `public` visibility).
+- Shows which documents are currently accessible to the selected user.
+- Runs semantic search and returns a generated answer with chunk-level citations.
+- Shows a request log so audiences can follow each API action during the demo.
+
+## Suggested Demo Questions
+Use these questions after indexing the sample docs:
+- `What are required SSO controls?`
+- `Is MFA required for remote sessions?`
+- `What is needed for production database access?`
+- `What approvals are needed for payroll changes?`
+- `What is the payroll cutoff time?`
+- `How long must support tickets be retained?`
+- `What happens when there is a legal hold notice?`
+- `How should archived PII be protected?`
+- `How are retention exceptions verified?`
+
+Note: Off-topic questions like `What is SQL?` are not covered by the sample docs and may return weak or no relevant context.
 
 ## Demo Users
 - `alice_admin` (`admin`)
@@ -58,6 +87,8 @@ curl -s -X POST http://localhost:8000/search \
 Pass user identity in `X-User` header.
 
 ## API Endpoints
+- `GET /` (web demo UI)
+- `GET /demo` (web demo UI)
 - `GET /health`
 - `GET /users/me`
 - `POST /documents/index`

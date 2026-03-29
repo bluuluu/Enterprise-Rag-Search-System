@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enterprise RAG Demo Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f4efe4;
+      --bg-soft: #fbf9f4;
+      --card: #fffdf7;
+      --text: #1f2933;
+      --muted: #5b6471;
+      --accent: #db6b2d;
+      --accent-2: #0b8f8f;
+      --line: #d8d2c6;
+      --ok: #2f8f4e;
+      --warn: #af5f16;
+      --danger: #b84035;
+      --shadow: 0 16px 40px rgba(20, 30, 40, 0.09);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 90% 10%, rgba(11, 143, 143, 0.16), transparent 34%),
+        radial-gradient(circle at 7% 84%, rgba(219, 107, 45, 0.22), transparent 40%),
+        var(--bg);
+      min-height: 100vh;
+    }
+
+    .shell {
+      width: min(1200px, 94vw);
+      margin: 34px auto 42px;
+      animation: rise 450ms ease-out;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero {
+      background: linear-gradient(125deg, #fff9ec 0%, #eff9f9 100%);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 24px 26px;
+      box-shadow: var(--shadow);
+      margin-bottom: 18px;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(1.5rem, 3vw, 2.1rem);
+      letter-spacing: -0.02em;
+    }
+
+    .hero p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      max-width: 68ch;
+      line-height: 1.45;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      padding: 7px 12px;
+      font-size: 0.85rem;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--accent-2);
+      box-shadow: 0 0 0 5px rgba(11, 143, 143, 0.2);
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: 340px 1fr;
+    }
+
+    .panel {
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    h2 {
+      margin: 0 0 10px;
+      font-size: 1.06rem;
+      letter-spacing: 0.01em;
+    }
+
+    .field {
+      margin-bottom: 12px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.83rem;
+      font-weight: 600;
+      color: #333f4d;
+      margin-bottom: 5px;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid #cfc7ba;
+      border-radius: 12px;
+      padding: 9px 11px;
+      background: #fff;
+      color: var(--text);
+      font: inherit;
+      transition: border-color 150ms ease;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent-2);
+    }
+
+    textarea {
+      min-height: 94px;
+      resize: vertical;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.84rem;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    button {
+      border: none;
+      border-radius: 11px;
+      padding: 9px 12px;
+      font: inherit;
+      font-size: 0.87rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 120ms ease, filter 120ms ease;
+      background: #ecf0f4;
+      color: #26313c;
+    }
+
+    button:hover { transform: translateY(-1px); filter: brightness(0.98); }
+    button:active { transform: translateY(0); }
+
+    .btn-primary {
+      background: linear-gradient(125deg, #db6b2d 0%, #c75d23 100%);
+      color: #fff8f0;
+    }
+
+    .btn-teal {
+      background: linear-gradient(125deg, #0b8f8f 0%, #0b7777 100%);
+      color: #f2ffff;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.35;
+      margin-top: 8px;
+    }
+
+    .status {
+      min-height: 34px;
+      margin-top: 10px;
+      border-radius: 11px;
+      padding: 8px 10px;
+      font-size: 0.83rem;
+      border: 1px solid #dfd7cb;
+      background: #f7f3eb;
+      color: #3f4954;
+      overflow-wrap: anywhere;
+    }
+
+    .status.ok { border-color: rgba(47, 143, 78, 0.35); background: rgba(47, 143, 78, 0.08); color: #1f5d34; }
+    .status.warn { border-color: rgba(175, 95, 22, 0.35); background: rgba(175, 95, 22, 0.09); color: #704012; }
+    .status.error { border-color: rgba(184, 64, 53, 0.35); background: rgba(184, 64, 53, 0.09); color: #7d2b23; }
+
+    .output {
+      margin-top: 14px;
+      border-top: 1px dashed #d8d0c3;
+      padding-top: 12px;
+    }
+
+    .answer {
+      white-space: pre-wrap;
+      line-height: 1.46;
+      font-size: 0.92rem;
+      background: #fdf7ec;
+      border: 1px solid #ebddc3;
+      border-radius: 13px;
+      padding: 12px;
+      min-height: 62px;
+    }
+
+    .citations {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .citation {
+      border: 1px solid #dbd3c5;
+      border-radius: 12px;
+      padding: 10px;
+      background: #fffcf5;
+      animation: rise 280ms ease-out;
+    }
+
+    .citation-meta {
+      font-size: 0.76rem;
+      color: #5c6470;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .citation p {
+      margin: 0;
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+
+    .docs-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .doc-item {
+      border: 1px solid #ddd4c5;
+      border-radius: 11px;
+      background: #fffdf8;
+      padding: 10px;
+      font-size: 0.84rem;
+    }
+
+    .doc-item strong {
+      display: block;
+      font-size: 0.9rem;
+    }
+
+    .log {
+      margin-top: 12px;
+      background: #121a24;
+      color: #ccf1f1;
+      border-radius: 12px;
+      padding: 10px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.74rem;
+      max-height: 190px;
+      overflow: auto;
+      border: 1px solid #2e3e4f;
+    }
+
+    .log-line {
+      margin-bottom: 7px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: 1fr; }
+      .hero { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <h1>Enterprise RAG Demo Console</h1>
+      <p>Use this page to demonstrate ingestion, permission-aware document access, and retrieval with citations. The controls hit your existing API endpoints directly.</p>
+      <div class="badge"><span class="dot"></span><span id="active-user-badge">Active user: amy_analyst</span></div>
+    </section>
+
+    <section class="grid">
+      <aside class="panel">
+        <h2>Control Center</h2>
+
+        <div class="field">
+          <label for="user-select">Demo user</label>
+          <select id="user-select">
+            <option value="amy_analyst">amy_analyst (analyst)</option>
+            <option value="victor_viewer">victor_viewer (viewer)</option>
+            <option value="alice_admin">alice_admin (admin)</option>
+          </select>
+          <div class="btn-row">
+            <button id="btn-whoami">Check /users/me</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="paths-input">Paths to index (one per line)</label>
+          <textarea id="paths-input">data/docs/security_controls.txt
+data/docs/payroll_sop.txt
+data/docs/retention_policy.txt</textarea>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label for="visibility-select">Visibility</label>
+            <select id="visibility-select">
+              <option value="private">private</option>
+              <option value="public">public</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="topk-input">Top K</label>
+            <input id="topk-input" type="number" min="1" max="20" value="5" />
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button id="btn-index" class="btn-primary">Index Documents</button>
+          <button id="btn-list-docs">List Documents</button>
+        </div>
+
+        <p class="hint">If the app is started outside repo root, use absolute file paths in the index box.</p>
+        <div id="status-box" class="status">Ready.</div>
+
+        <div class="output">
+          <h2>Accessible Documents</h2>
+          <div id="docs-list" class="docs-list"></div>
+        </div>
+      </aside>
+
+      <section class="panel">
+        <h2>Search Playground</h2>
+        <div class="field">
+          <label for="query-input">Search query</label>
+          <textarea id="query-input" style="min-height: 110px;">What are required SSO controls?</textarea>
+        </div>
+        <div class="btn-row">
+          <button id="btn-search" class="btn-teal">Run Search</button>
+          <button id="btn-clear">Clear Output</button>
+        </div>
+
+        <div class="output">
+          <h2>Answer</h2>
+          <div id="answer-box" class="answer">No search run yet.</div>
+
+          <h2 style="margin-top: 14px;">Citations</h2>
+          <div id="citations-box" class="citations"></div>
+        </div>
+
+        <div class="output">
+          <h2>Request Log</h2>
+          <div id="log-box" class="log"></div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const state = {
+      currentUser: 'amy_analyst',
+    };
+
+    const el = (id) => document.getElementById(id);
+
+    const refs = {
+      userSelect: el('user-select'),
+      activeUserBadge: el('active-user-badge'),
+      pathsInput: el('paths-input'),
+      visibilitySelect: el('visibility-select'),
+      topkInput: el('topk-input'),
+      queryInput: el('query-input'),
+      statusBox: el('status-box'),
+      answerBox: el('answer-box'),
+      citationsBox: el('citations-box'),
+      docsList: el('docs-list'),
+      logBox: el('log-box'),
+      btnWhoami: el('btn-whoami'),
+      btnIndex: el('btn-index'),
+      btnListDocs: el('btn-list-docs'),
+      btnSearch: el('btn-search'),
+      btnClear: el('btn-clear'),
+    };
+
+    function setStatus(message, level = 'warn') {
+      refs.statusBox.textContent = message;
+      refs.statusBox.className = `status ${level}`;
+    }
+
+    function log(message) {
+      const stamp = new Date().toLocaleTimeString();
+      const line = document.createElement('div');
+      line.className = 'log-line';
+      line.textContent = `[${stamp}] ${message}`;
+      refs.logBox.prepend(line);
+    }
+
+    function setActiveUser(user) {
+      state.currentUser = user;
+      refs.activeUserBadge.textContent = `Active user: ${user}`;
+      log(`Switched user -> ${user}`);
+    }
+
+    function parsePaths() {
+      return refs.pathsInput.value
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
+    }
+
+    async function apiRequest(path, options = {}) {
+      const method = options.method || 'GET';
+      const body = options.body;
+      const headers = {
+        'X-User': state.currentUser,
+      };
+
+      if (body !== undefined) {
+        headers['Content-Type'] = 'application/json';
+      }
+
+      const response = await fetch(path, {
+        method,
+        headers,
+        body: body !== undefined ? JSON.stringify(body) : undefined,
+      });
+
+      const raw = await response.text();
+      let data = null;
+      try {
+        data = raw ? JSON.parse(raw) : null;
+      } catch {
+        data = raw;
+      }
+
+      return { ok: response.ok, status: response.status, data };
+    }
+
+    function renderDocuments(docs) {
+      refs.docsList.innerHTML = '';
+      if (!Array.isArray(docs) || docs.length === 0) {
+        refs.docsList.innerHTML = '<div class="doc-item">No accessible documents found.</div>';
+        return;
+      }
+
+      docs.forEach((doc) => {
+        const node = document.createElement('div');
+        node.className = 'doc-item';
+        node.innerHTML = `
+          <strong>${doc.title} (id:${doc.id})</strong>
+          visibility=${doc.visibility}, chunks=${doc.chunk_count}<br/>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem;">${doc.source_path}</span>
+        `;
+        refs.docsList.appendChild(node);
+      });
+    }
+
+    function renderCitations(citations) {
+      refs.citationsBox.innerHTML = '';
+      if (!Array.isArray(citations) || citations.length === 0) {
+        refs.citationsBox.innerHTML = '<div class="citation"><p>No citations returned.</p></div>';
+        return;
+      }
+
+      citations.forEach((c) => {
+        const node = document.createElement('article');
+        node.className = 'citation';
+        node.innerHTML = `
+          <div class="citation-meta">${c.document_title} | chunk:${c.chunk_id} | score:${c.score}</div>
+          <p>${c.snippet}</p>
+        `;
+        refs.citationsBox.appendChild(node);
+      });
+    }
+
+    async function checkCurrentUser() {
+      log('GET /users/me');
+      const res = await apiRequest('/users/me');
+      if (!res.ok) {
+        const detail = res.data?.detail || JSON.stringify(res.data);
+        setStatus(`User check failed (${res.status}): ${detail}`, 'error');
+        log(`users/me failed -> ${res.status}`);
+        return;
+      }
+
+      setStatus(`Authenticated as ${res.data.username} (${res.data.role})`, 'ok');
+      log(`users/me ok -> ${res.data.username} (${res.data.role})`);
+    }
+
+    async function indexDocs() {
+      const paths = parsePaths();
+      if (paths.length === 0) {
+        setStatus('Add at least one file path before indexing.', 'warn');
+        return;
+      }
+
+      const payload = {
+        paths,
+        visibility: refs.visibilitySelect.value,
+      };
+
+      log(`POST /documents/index with ${paths.length} path(s)`);
+      const res = await apiRequest('/documents/index', { method: 'POST', body: payload });
+      if (!res.ok) {
+        const detail = res.data?.detail || JSON.stringify(res.data);
+        setStatus(`Index failed (${res.status}): ${detail}`, 'error');
+        log(`index failed -> ${res.status}`);
+        return;
+      }
+
+      const indexedCount = Array.isArray(res.data.indexed) ? res.data.indexed.length : 0;
+      setStatus(`Indexed ${indexedCount} document(s).`, 'ok');
+      log(`index ok -> indexed ${indexedCount}`);
+      await listDocs();
+    }
+
+    async function listDocs() {
+      log('GET /documents');
+      const res = await apiRequest('/documents');
+      if (!res.ok) {
+        const detail = res.data?.detail || JSON.stringify(res.data);
+        setStatus(`List docs failed (${res.status}): ${detail}`, 'error');
+        log(`list docs failed -> ${res.status}`);
+        return;
+      }
+
+      renderDocuments(res.data);
+      setStatus(`Loaded ${res.data.length} accessible document(s).`, 'ok');
+      log(`list docs ok -> ${res.data.length} docs`);
+    }
+
+    async function runSearch() {
+      const query = refs.queryInput.value.trim();
+      const topK = Number(refs.topkInput.value);
+
+      if (!query) {
+        setStatus('Enter a search query first.', 'warn');
+        return;
+      }
+
+      if (!Number.isFinite(topK) || topK < 1 || topK > 20) {
+        setStatus('Top K must be between 1 and 20.', 'warn');
+        return;
+      }
+
+      log(`POST /search top_k=${topK}`);
+      const res = await apiRequest('/search', {
+        method: 'POST',
+        body: { query, top_k: topK },
+      });
+
+      if (!res.ok) {
+        const detail = res.data?.detail || JSON.stringify(res.data);
+        setStatus(`Search failed (${res.status}): ${detail}`, 'error');
+        refs.answerBox.textContent = 'Search request failed.';
+        refs.citationsBox.innerHTML = '';
+        log(`search failed -> ${res.status}`);
+        return;
+      }
+
+      refs.answerBox.textContent = res.data.answer || 'No answer.';
+      renderCitations(res.data.citations || []);
+      setStatus(`Search completed with ${(res.data.citations || []).length} citation(s).`, 'ok');
+      log(`search ok -> ${(res.data.citations || []).length} citation(s)`);
+    }
+
+    function clearOutput() {
+      refs.answerBox.textContent = 'No search run yet.';
+      refs.citationsBox.innerHTML = '';
+      refs.docsList.innerHTML = '';
+      setStatus('Output cleared.', 'warn');
+      log('cleared output');
+    }
+
+    refs.userSelect.addEventListener('change', (event) => {
+      setActiveUser(event.target.value);
+      checkCurrentUser();
+    });
+
+    refs.btnWhoami.addEventListener('click', checkCurrentUser);
+    refs.btnIndex.addEventListener('click', indexDocs);
+    refs.btnListDocs.addEventListener('click', listDocs);
+    refs.btnSearch.addEventListener('click', runSearch);
+    refs.btnClear.addEventListener('click', clearOutput);
+
+    setActiveUser(state.currentUser);
+    checkCurrentUser();
+    listDocs();
+  </script>
+</body>
+</html>

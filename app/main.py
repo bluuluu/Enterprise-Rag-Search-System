@@ -1,4 +1,7 @@
+from pathlib import Path
+
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -11,6 +14,7 @@ from .security import get_current_user, require_min_role
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Enterprise RAG Knowledge Search")
+DEMO_PAGE = Path(__file__).resolve().parent / "static" / "demo.html"
 
 
 @app.on_event("startup")
@@ -33,6 +37,16 @@ def bootstrap_data():
 def health(db: Session = Depends(get_db)):
     db.execute(text("SELECT 1"))
     return {"status": "ok"}
+
+
+@app.get("/", include_in_schema=False)
+def demo_home():
+    return FileResponse(DEMO_PAGE)
+
+
+@app.get("/demo", include_in_schema=False)
+def demo_page():
+    return FileResponse(DEMO_PAGE)
 
 
 @app.get("/users/me")
